@@ -1,5 +1,8 @@
 /data
 /results
+Icon*
+**/jón
+**/.idea
 **/__pycache__
 **/.ipynb_checkpoints
 *~
