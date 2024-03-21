@@ -1,0 +1,111 @@
+SETTING UP CONDA
+================
+#NOTE: The following doesn't work :(
+
+The setup is described at https://irhpcwiki.hi.is/docs/software/TensorFlow-GPU/
+Note that there is an error in the Conda path, conda_env should be env/conda
+(so use "conda activate /hpcapps/env/conda/TF2-gpu/2.4.1")
+
+conda init doesn't work and there is no mamba. One possibility is:
+
+Add the following lines to .bashrc:
+  module use /hpcapps/libbio-gpu/modules/all/
+  ml tf2-gpu
+  eval "$(/hpcapps/lib-mimir/software/Anaconda3/2022.05/bin/conda shell.bash hook)"
+
+Add default channels in .condarc, e.g. with:
+  for x in defaults bioconda conda-forge; do conda config --add channels $x; done
+
+mkdir ~/.conda/envs
+  conda create --prefix ~/.conda/envs/TF2-gpu --clone /hpcapps/env/conda/TF2-gpu/2.4.1
+  (this command took a long time to run)
+
+ADD MAMBA
+=========
+NOTE: For some reason the following commands (for adding mamba) failed:
+  conda activate TF2-gpu
+  conda install mamba -c conda-forge
+To get around this issue the following worked:
+  conda create --prefix ~/.conda/envs/newbase --clone base
+  conda activate newbase
+  conda install mamba
+  mamba create --prefix ~/.conda/envs/TF2-gpu --clone /hpcapps/env/conda/TF2-gpu/2.4.1
+  
+After this, one can add to .bashrc the line:
+  conda activate TF2-gpu
+
+ADD OTHER PACKAGES
+==================
+Use:
+  mamba install keras scikit-learn gdal jupyterlab matplotlib pandas
+
+Perhaps create a new environment with these additions
+Perhaps do this via a .yml file
+
+CONNECTING TO A GPU-PARTITION
+=============================
+There are two partition with A-100 processors:
+  gpu-1xA100    three nodes, each with a single Nvidia A100 Tesla GPU
+  gpu-2xA100    five nodes, each with a dual Nvidia A100 Tesla GPU
+
+To connect to a gpu-node with a 3 hour limit, issue:
+  srun --partition <partition> --cpus-per-task 1 --mem-per-cpu 1000 --time 03:00:00 --pty bash
+
+You can also use the following shell-script (name it gpu):
+  #!/bin/bash
+  # Use: "gpu p" where p is the partion number, 1 or 2 (default 2)
+  if [[ ! $1 ]]; then set 2; fi
+  srun --partition gpu-$1xA100 --cpus-per-task 1 --mem-per-cpu 1000 --time 03:00:00 --pty bash
+
+RUNNING JUPYTER-LAB
+===================
+Once connected to a GPU-node issue:
+  jupyter-lab --port 8888 --no-browser
+
+Once running, the command prints out a URL with a token, e.g.
+  http://localhost:8888/lab?token=57cea6151b66495177a7360b4e184b6d607f773744e88b5b
+
+Take note of the node name (e.g. gpu-1) and copy the URL to the clipboard.
+
+Alternatively create a shell-script (jupy):
+  #!/bin/bash
+  node=$(uname -n)
+  echo A100-node: $node > ~/url.txt
+  echo Starting jupyter-lab on node $node. When URL with token has been displayed,
+  echo issue the command "tunnel" on the local machine
+  echo ""
+  eval "$($CONDA_EXE shell.bash hook)"
+  conda activate TF2-gpu
+  jupyter-lab --port 8888 --no-browser 2>&1 | tee -a ~/url.txt  
+
+The shell script writes the node name and URL to the file ~/url.txt.
+
+SETTING UP A TUNNEL
+===================
+Now, on the local machine set up a tunnel with:
+  ssh -J elja.hi.is <NODE> -L 8888:localhost:8888
+
+Alternatively use this shell-script (named tunnel):
+  #!/bin/bash
+  urltxt=$(ssh elja.hi.is "cat url.txt")
+  read __ node <<< $(head -1 <<< "$urltxt")
+  read url __ <<< $(grep '^ *http://localhost' <<< "$urltxt")
+  echo node=$node, url=$url
+  echo Setting up a tunnel to jupyter-lab on $node on elja.
+  echo Copying the Elja-url to the clipboard. To connect, paste it into a browser address bar.
+  echo $url | pbcopy
+  ssh -J elja.hi.is $node -L 8888:localhost:8888
+
+  (which reads the node and URL information from url.txt on elja)
+
+CONNECTING TO JUPYTER-LAB
+=========================
+Next paste the clipboard-contents into the address bar of a browser.
+To see where the python executable is use:
+  import sys
+  print(sys.executable)
+  (should print $HOME/.conda/envs/TF2-gpu/bin/python)
+
+To see the Tensorflow version and the available GPU-s use:
+  print(tf.__version__)
+  print("GPU-s:", tf.config.experimental.list_physical_devices('GPU'))

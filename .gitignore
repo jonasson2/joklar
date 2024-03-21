@@ -1,6 +1,7 @@
 /data/*/
 /results
 Icon*
+.DS_Store
 **/jón
 **/.idea
 **/__pycache__

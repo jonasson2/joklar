@@ -1,0 +1,19 @@
+name: tf-gpu1
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - cudatoolkit
+  - cudnn
+  - tensorflow
+  - tensorflow-base
+  - tensorflow-estimator
+  - tensorflow-gpu
+  - numpy=1.19.5
+  - scipy
+  - matplotlib
+  - jupyterlab
+  - pandas
+  - keras
+  - scikit-learn
+  - gdal
