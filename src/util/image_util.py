@@ -22,5 +22,7 @@ def load_data(filename, indices="all"):
         I = range(len(data["mask"]))
     image = data['image'][I]/10000
     mask = data['mask'][I]
+    row = data['row'][I]
+    col = data['col'][I]
     n_channels = image.shape[-1]
-    return image, mask
+    return image, mask, row, col
