@@ -61,8 +61,9 @@ MODELTYPE = "unet"
 AUGMENTATION = False
 MODEL_PATH = PATH + "results/" + MODELTYPE + "/"
 DATA_PATH = PATH + "data/lang/"
-COMPACT = True
+COMPACT = False
 COMBINE_TEST_VAL = True
+TRYMETA = False
 os.makedirs(MODEL_PATH, exist_ok=True)
 os.chdir(MODEL_PATH)
 
@@ -226,12 +227,18 @@ else:
 
 # In[ ]:
 
-
-factors = [0.1, 0.3]
-patiences = [5, 10, 20]
-min_lrs = [1e-5, 1e-6]
-init_lrs = [1e-3, 1e-4]
-batch_sizes = [8, 32, 128]
+if TRYMETA:
+    factors = [0.1, 0.3]
+    patiences = [5, 10, 20]
+    min_lrs = [1e-5, 1e-6]
+    init_lrs = [1e-3, 1e-4]
+    batch_sizes = [8, 32, 128]
+else:
+    factors = [0.3]
+    patiences = [10]
+    min_lrs = [1e-5]
+    init_lrs = [1e-4]
+    batch_sizes = [32]
 
 for factor in factors:
     for patience in patiences:
@@ -244,7 +251,7 @@ for factor in factors:
                     results = model.fit(*data_input,
                         verbose=0,
                         batch_size=8,
-                        epochs=10,
+                        epochs=40,
                         callbacks=callbacks,
                         validation_data=(image[val], mask[val]))
                     print(results)
