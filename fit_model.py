@@ -84,7 +84,21 @@ def train_val_test_split(indices):
 # In[6]:
 
 
-get_ipython().run_cell_magic('time', '', '(image, mask, *_) = load_data(DATA_PATH + "data.npz", "border")\nnpixel = 256\nif COMPACT:\n    # Compact data by a factor of fold**3\n    fold = 4\n    npixel //= fold\n    image = compactify(image, fold=fold)\n    mask = compactify(mask, fold=fold)\n\ndtype = image.dtype\nntile = len(image)\nnchan = image.shape[-1]\nprint(f"{nchan} channels, {ntile} tiles, datatype: {dtype}")\nprint("Image shape:", image.shape)\nprint("Mask shape:", mask.shape)\n')
+(image, mask, *_) = load_data(DATA_PATH + "data.npz", "border")
+npixel = 256
+if COMPACT:
+    # Compact data by a factor of fold**3
+    fold = 4
+    npixel //= fold
+    image = compactify(image, fold=fold)
+    mask = compactify(mask, fold=fold)
+
+dtype = image.dtype
+ntile = len(image)
+nchan = image.shape[-1]
+print(f"{nchan} channels, {ntile} tiles, datatype: {dtype}")
+print("Image shape:", image.shape)
+print("Mask shape:", mask.shape)
 
 
 # In[7]:
