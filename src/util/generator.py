@@ -1,3 +1,5 @@
+from .util import install_if_missing
+install_if_missing('albumentations')
 import tensorflow as tf, numpy as np, albumentations, random
 
 class AugmentDataGenerator(tf.keras.utils.Sequence):
