@@ -14,6 +14,28 @@ except:
     PATH = os.path.expanduser("~") + "/drive/joklar/"
 
 
+# In[ ]:
+
+
+import os
+
+try:  # Check platform (Colab)
+    from google.colab import drive
+    drive.mount('/content/drive')
+    PATH = "/content/drive/My Drive/joklar/"
+except ImportError:  # Not in Colab
+    host = os.environ.get('HOST')
+    if host == 'makki':
+        PATH = os.path.expanduser("~/drive/joklar/")
+    elif host == 'elja':
+        PATH = os.path.expanduser("~/joklar/")
+    else:
+        s = f"$HOST is {host}, it should be 'makki' or 'elja'"
+        raise EnvironmentError(s)
+
+print("Working directory path set to:", PATH)
+
+
 # In[2]:
 
 
