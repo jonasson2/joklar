@@ -1,25 +1,9 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
+# Set PATH according to platform
 import os
-try:  # Check platform (Colab or Jupyter)
-    # noinspection PyUnresolvedReferences
-    from google.colab import drive
-    drive.mount('/content/drive')
-    PATH = "/content/drive/My Drive/joklar/"
-except:
-    PATH = os.path.expanduser("~") + "/drive/joklar/"
-
-
-# In[ ]:
-
-
-import os
-
-try:  # Check platform (Colab)
+try:
     from google.colab import drive
     drive.mount('/content/drive')
     PATH = "/content/drive/My Drive/joklar/"
@@ -32,13 +16,9 @@ except ImportError:  # Not in Colab
     else:
         s = f"$HOST is {host}, it should be 'makki' or 'elja'"
         raise EnvironmentError(s)
-
 print("Working directory path set to:", PATH)
 
-
-# In[2]:
-
-
+# Imports
 import numpy as np, os, sys, time, pandas as pd, tensorflow as tf, random
 start_time = time.time()
 import keras
@@ -52,10 +32,6 @@ from util.util import install_import
 from util.image_util import load_data, compactify
 from osgeo import gdal
 
-
-# In[3]:
-
-
 # Define model type and data to use
 MODELTYPE = "unet"
 AUGMENTATION = False
@@ -67,10 +43,6 @@ TRYMETA = False
 os.makedirs(MODEL_PATH, exist_ok=True)
 os.chdir(MODEL_PATH)
 
-
-# In[4]:
-
-
 # Import project-specific packages
 
 # NOTES
@@ -79,19 +51,14 @@ os.chdir(MODEL_PATH)
 # (the original files are in the subdirectory from_github, cf differences.txt)
 #
 # unet is copied from...
-
 if MODELTYPE == "unet":
     from unet.unet import get_unet
 else:  # deeplab
     install_import("keras_applications")
     from deeplabv3p.model import get_deeplabv3p_model
 
-
-# In[5]:
-
-
+# Define data split (training, validation, and test sets)
 def train_val_test_split(indices):
-    # Define data split (training, validation, and test sets)
     seed = 41
     tf_seed = 41
     random.seed(seed)
@@ -104,9 +71,7 @@ def train_val_test_split(indices):
     return train, val, test
 
 
-# In[6]:
-
-
+# Load data and possibly compactify it
 (image, mask, *_) = load_data(DATA_PATH + "data.npz", "border")
 npixel = 256
 if COMPACT:
@@ -116,6 +81,7 @@ if COMPACT:
     image = compactify(image, fold=fold)
     mask = compactify(mask, fold=fold)
 
+# Print info
 dtype = image.dtype
 ntile = len(image)
 nchan = image.shape[-1]
@@ -123,31 +89,8 @@ print(f"{nchan} channels, {ntile} tiles, datatype: {dtype}")
 print("Image shape:", image.shape)
 print("Mask shape:", mask.shape)
 
-
-# In[7]:
-
-
-from tensorflow.keras.callbacks import Callback
-class PrintCallback(Callback):
-    def on_epoch_end(self, epoch, logs=None):
-        if epoch % 3 != 0: return
-        logs = logs or {}
-        output = f"Epoch {epoch + 1}/{self.params['epochs']}: "
-        output += ", ".join([f"{k}={v:.4f}" for k, v in logs.items()])
-        print(output)
-    def on_train_batch_end(self, batch, logs=None):
-        return
-        logs = logs or {}
-        output = f"Batch {batch + 1}/{self.params['steps']}: "
-        output += ", ".join([f"{k}={v:.4f}" for k, v in logs.items()])
-        print(output)
-
-
-# In[8]:
-
-
+# Implement data augmentation with the albumentations package
 def albumentations_generator(img, mask, train):
-    # Implement data augmentation with the albumentations package
     npixel = img.shape[1]
     augmentation = {
         "random_gamma_probability": 0.5,
@@ -165,10 +108,7 @@ def albumentations_generator(img, mask, train):
     train_gen = AugmentDataGenerator(img[train], mask[train], augmentation)
     return train_gen
 
-
-# In[9]:
-
-
+# Create unet or deeplabv3p model
 def create_model(npixel, nchan, init_lr=1e-4):
     if MODELTYPE == "unet":
         input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
@@ -192,10 +132,23 @@ def create_model(npixel, nchan, init_lr=1e-4):
     return model
     # NOTE: Saving weights only gives a file just as big as saving the whole model
 
+# Define print callback
+from tensorflow.keras.callbacks import Callback
+class PrintCallback(Callback):
+    def on_epoch_end(self, epoch, logs=None):
+        if epoch % 3 != 0: return
+        logs = logs or {}
+        output = f"Epoch {epoch + 1}/{self.params['epochs']}: "
+        output += ", ".join([f"{k}={v:.4f}" for k, v in logs.items()])
+        print(output)
+    def on_train_batch_end(self, batch, logs=None):
+        return
+        logs = logs or {}
+        output = f"Batch {batch + 1}/{self.params['steps']}: "
+        output += ", ".join([f"{k}={v:.4f}" for k, v in logs.items()])
+        print(output)
 
-# In[10]:
-
-
+# Define other callbacks
 def define_callbacks(factor=0.3, patience=10, min_lr=1e-5):
     checkpoint_best = ModelCheckpoint('model_best.keras',
                                       monitor="val_loss",
@@ -212,10 +165,7 @@ def define_callbacks(factor=0.3, patience=10, min_lr=1e-5):
     ]
     return callbacks
 
-
-# In[11]:
-
-
+# Split data into training, validation and test
 (train, val, test) = train_val_test_split(range(ntile))
 if COMBINE_TEST_VAL:
     val += test
@@ -224,9 +174,7 @@ if AUGMENTATION:
 else:
     data_input = (image[train], mask[train])
 
-
-# In[ ]:
-
+# Define lists of meta parameters to cover
 if TRYMETA:
     factors = [0.1, 0.3]
     patiences = [5, 10, 20]
@@ -240,6 +188,7 @@ else:
     init_lrs = [1e-4]
     batch_sizes = [32]
 
+# Train
 for factor in factors:
     for patience in patiences:
         for min_lr in min_lrs:
@@ -259,46 +208,31 @@ for factor in factors:
 history = results.history
 len(history['loss'])
 
-
-# In[ ]:
-
-
-# Plot learning curve
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(7, 5))
-plt.title("Learning curve")
-plt.plot(history["loss"], label="loss")
-plt.plot(history["val_loss"], label="val_loss")
-plt.plot(np.argmin(history["val_loss"]),
-         np.min(history["val_loss"]),
-         marker="x", color="r", label="best model")
-plt.xlabel("Epochs")
-plt.ylabel("log_loss")
-plt.legend();
-
-
-# In[ ]:
-
-
 # Compute predicted probabilites everywhere; evaluate on test
 probs = model.predict(image, verbose=1)
 (test_loss, test_accuracy) = model.evaluate(image[test], mask[test])
 print(f'Accuracy on test: {test_accuracy}')
-plt.hist(probs.ravel())
 
-
-# In[ ]:
-
+# Plot learning curve
+if host != "elja":
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(7, 5))
+    plt.title("Learning curve")
+    plt.plot(history["loss"], label="loss")
+    plt.plot(history["val_loss"], label="val_loss")
+    plt.plot(np.argmin(history["val_loss"]),
+             np.min(history["val_loss"]),
+             marker="x", color="r", label="best model")
+    plt.xlabel("Epochs")
+    plt.ylabel("log_loss")
+    plt.legend();
+    plt.figure()
+    plt.hist(probs.ravel())
 
 # Save the training history and model predictions
 pdhistory = pd.DataFrame(history)
 pdhistory.to_csv("result_history.csv")
 np.savez("probs.npz", probs, test_loss, test_accuracy)
-
-
-# In[ ]:
-
 
 # Display running time and disconnect
 end_time = time.time()
@@ -306,13 +240,8 @@ min, sec = divmod(int(end_time - start_time), 60)
 print(f"Total execution time: {min}:{sec:02}")
 
 
-# In[ ]:
-
-
 try:
-    # noinspection PyUnresolvedReferences
     from google.colab import runtime
     runtime.unassign()
 except:
     pass
-
