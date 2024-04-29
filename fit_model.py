@@ -116,9 +116,8 @@ class DummyScope:
 
 # Create unet or deeplabv3p model
 def create_model(npixel, nchan, init_lr=1e-4):
-    strategy = tf.distribute.MirroredStrategy()
-    with strategy.scope():
-    #with DummyScope():
+    #strategy = tf.distribute.MirroredStrategy()
+    with DummyScope():
         if MODELTYPE == "unet":
             input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
             model = get_unet(input_img, n_filters=16, dropout=0.3, batchnorm=True)
@@ -188,10 +187,10 @@ else:
 # Define lists of meta parameters to cover
 if TRYMETA:
     factors = [0.1, 0.3]
-    patiences = [5, 10, 20]
+    patiences = [10]
     min_lrs = [1e-5, 1e-6]
     init_lrs = [1e-3, 1e-4]
-    batch_sizes = [8, 32, 128]
+    batch_sizes = [8, 128]
 else:
     factors = [0.3]
     patiences = [10]
