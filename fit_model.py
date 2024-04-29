@@ -108,29 +108,40 @@ def albumentations_generator(img, mask, train):
     train_gen = AugmentDataGenerator(img[train], mask[train], augmentation)
     return train_gen
 
+class DummyScope:
+    def __enter__(self):
+        pass
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
 # Create unet or deeplabv3p model
 def create_model(npixel, nchan, init_lr=1e-4):
-    if MODELTYPE == "unet":
-        input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
-        model = get_unet(input_img, n_filters=16, dropout=0.3, batchnorm=True)
+    strategy = tf.distribute.MirroredStrategy()
+    with strategy.scope():
+    #with DummyScope():
+        if MODELTYPE == "unet":
+            input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
+            model = get_unet(input_img, n_filters=16, dropout=0.3, batchnorm=True)
 
-    else:  # deeplab
-        get_deeplab = get_deeplabv3p_model
-        model = get_deeplab(model_type='resnet50', num_classes=1,
-                            model_input_shape=(npixel, npixel),
-                            output_stride=16,
-                            freeze_level=0,
-                            weights_path=None,
-                            training=True,
-                            use_subpixel=False)
+        else:  # deeplab
+            get_deeplab = get_deeplabv3p_model
+            model = get_deeplab(model_type='resnet50', num_classes=1,
+                                model_input_shape=(npixel, npixel),
+                                output_stride=16,
+                                freeze_level=0,
+                                weights_path=None,
+                                training=True,
+                                use_subpixel=False)
 
-    Adam_params = {"learning_rate": init_lr, "clipnorm": 1.0}
-    model.compile(optimizer=Adam(**Adam_params),
-                  loss="binary_crossentropy",
-                  metrics=["accuracy"])
+        Adam_params = {"learning_rate": init_lr, "clipnorm": 1.0}
+        model.compile(optimizer=Adam(**Adam_params),
+                      loss="binary_crossentropy",
+                      metrics=["accuracy"])
     #model.save('model_first.keras')
     return model
     # NOTE: Saving weights only gives a file just as big as saving the whole model
+
+import tensorflow as tf
 
 # Define print callback
 from tensorflow.keras.callbacks import Callback
