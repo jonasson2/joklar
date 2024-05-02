@@ -38,7 +38,7 @@ AUGMENTATION = False
 MODEL_PATH = PATH + "results/" + MODELTYPE + "/"
 DATA_PATH = PATH + "data/lang/"
 COMPACT = False
-COMBINE_TEST_VAL = True
+COMBINE_TEST_VAL = False
 TRYMETA = False
 os.makedirs(MODEL_PATH, exist_ok=True)
 os.chdir(MODEL_PATH)
@@ -117,28 +117,26 @@ class DummyScope:
 # Create unet or deeplabv3p model
 def create_model(npixel, nchan, init_lr=1e-4):
     #strategy = tf.distribute.MirroredStrategy()
-    with DummyScope():
-        if MODELTYPE == "unet":
-            input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
-            model = get_unet(input_img, n_filters=16, dropout=0.3, batchnorm=True)
+    if MODELTYPE == "unet":
+        input_img = keras.layers.Input((npixel, npixel, nchan), name='img')
+        model = get_unet(input_img, n_filters=16, dropout=0.3, batchnorm=True)
+    else:  # deeplab
+        get_deeplab = get_deeplabv3p_model
+        model = get_deeplab(model_type='resnet50', num_classes=1,
+                            model_input_shape=(npixel, npixel),
+                            output_stride=16,
+                            freeze_level=0,
+                            weights_path=None,
+                            training=True,
+                            use_subpixel=False)
 
-        else:  # deeplab
-            get_deeplab = get_deeplabv3p_model
-            model = get_deeplab(model_type='resnet50', num_classes=1,
-                                model_input_shape=(npixel, npixel),
-                                output_stride=16,
-                                freeze_level=0,
-                                weights_path=None,
-                                training=True,
-                                use_subpixel=False)
-
-        Adam_params = {"learning_rate": init_lr, "clipnorm": 1.0}
-        model.compile(optimizer=Adam(**Adam_params),
-                      loss="binary_crossentropy",
-                      metrics=["accuracy"])
+    Adam_params = {"learning_rate": init_lr, "clipnorm": 1.0}
+    model.compile(optimizer=Adam(**Adam_params),
+                  loss="binary_crossentropy",
+                  metrics=["accuracy"])
     #model.save('model_first.keras')
     return model
-    # NOTE: Saving weights only gives a file just as big as saving the whole model
+# NOTE: Saving weights only gives a file just as big as saving the whole model
 
 import tensorflow as tf
 
@@ -187,10 +185,10 @@ else:
 # Define lists of meta parameters to cover
 if TRYMETA:
     factors = [0.1, 0.3]
-    patiences = [10]
+    patiences = [5, 10, 20]
     min_lrs = [1e-5, 1e-6]
     init_lrs = [1e-3, 1e-4]
-    batch_sizes = [8, 128]
+    batch_sizes = [8, 32, 128]
 else:
     factors = [0.3]
     patiences = [10]
@@ -199,6 +197,8 @@ else:
     batch_sizes = [32]
 
 # Train
+(train, val, test) = train_val_test_split(range(ntile))
+data_input = (albumentations_generator(image, mask, train),)
 for factor in factors:
     for patience in patiences:
         for min_lr in min_lrs:
@@ -206,11 +206,10 @@ for factor in factors:
                 for batch_size in batch_sizes:
                     callbacks = define_callbacks(factor, patience, min_lr)
                     model = create_model(npixel, nchan, init_lr=init_lr)
-                    # Train (save best results, and possibly all)
                     results = model.fit(*data_input,
                         verbose=0,
-                        batch_size=8,
-                        epochs=40,
+                        batch_size=batch_size,
+                        epochs=100,
                         callbacks=callbacks,
                         validation_data=(image[val], mask[val]))
                     print(results)
