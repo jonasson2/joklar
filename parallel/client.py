@@ -1,7 +1,7 @@
-import socket
-import json
+#!/usr/bin/env python
+import socket, json
 
-def test_client(host='130.208.188.223', port=52981):
+def test_client(host='elja-irhpc', port=52981):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
         request_message = "Request task"

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Server script that doles out tasks to workers. The task list is
 # read from a csv file with format:
 #
@@ -7,7 +9,7 @@
 
 import socket, pandas as pd, json
 
-def run_server(host='130.208.188.223', port=52981):
+def run_server(host='elja-irhpc', port=52981):
     tasks = pd.read_csv("tasks.txt", index_col=0)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))            
