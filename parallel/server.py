@@ -1,27 +1,73 @@
 #!/usr/bin/env python
 
 # Server script that doles out tasks to workers. The task list is
-# read from a csv file with format:
+# read from a csv file provided on the command line with format:
 #
 # id,param1,param2...
 # 0,val1,val2...
 # 1,val1,val2...
 
-import socket, pandas as pd, json
+import socket, pandas as pd, json, sys, os, shutil
+from par_util import get_server_host_and_port
 
-def run_server(host='elja-irhpc', port=52981):
-    tasks = pd.read_csv("tasks.txt", index_col=0)
+def clear_results(folder):
+    for item in os.listdir(folder):
+        if item.startswith('results-'):
+            folder_item = f"{folder}/{item}"
+            if os.path.isdir(folder_item):
+                shutil.rmtree(folder_item)
+            else:
+                os.remove(folder_item)
+
+def run_server(param_file, folder, port=52981):
+    tasks = pd.read_csv(param_file, index_col=0)
+    tasks["done"] = False
+    results = {}
+    task_indices = tasks.index.copy()
+    print('task_indices=', task_indices)
+    (host, port) = get_server_host_and_port()
+    os.makedirs(folder, exist_ok = True)
+    processes = {}
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))            
+        s.bind((host, port))
+        print(f"Server waiting to deliver tasks on port {port}, host {host}")
         s.listen()
-        for task_number in tasks.index:
-            params = json.dumps(tasks.loc[task_number].to_dict())
+        while True:
             (conn, addr) = s.accept()
+            print('addr=', addr)
             with conn:
-                print(f"Connected by {addr}")
                 request = conn.recv(1024).decode()
-                assert(request == "Request task")
-                conn.sendall(params.encode())
+                if request.startswith("Request task:"):
+                    process = request.split(":", 1)[1]
+                    if task_indices.empty:
+                        conn.sendall("No more tasks".encode())
+                        processes[process] = None
+                    else:
+                        processes[process] = 1
+                        task_number = int(task_indices[0])
+                        print('task_number', task_number)
+                        task = tasks.loc[task_number].to_dict()
+                        params = [folder, task_number, task]
+                        stri = json.dumps(params)
+                        conn.sendall(json.dumps(params).encode())
+                        task_indices = task_indices.drop(task_number)
+                        print(f"Task {task_number} for folder {folder} delivered")
+                elif request.startswith("Task finished:"):xxxxxxxxxxxxxxxxxx
+                    task_nr = int(request.split(":", 1)[1])
+                    print(f'Task {task_nr} finished')
+                    tasks.loc[task_nr, 'done'] = True
+                else:
+                    error(f"Unknown request: {request}")
+                if all(tasks.done):
+                    break
+        print("All tasks finished")
 
 if __name__ == "__main__":
-    run_server()
+    if len(sys.argv) == 2 and sys.argv[1] == '-h':
+        print('Usage:')
+        print('    server.py [param-file [folder]]  (defaults parameters.csv and .)')
+    else:
+        param_file = "parameters.csv" if len(sys.argv) <= 1 else sys.argv[1]
+        folder = "." if len(sys.argv) <= 2 else sys.argv[2]
+        clear_results(folder)
+        run_server(param_file, folder)

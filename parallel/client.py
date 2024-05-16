@@ -1,15 +1,45 @@
 #!/usr/bin/env python
-import socket, json
 
-def test_client(host='elja-irhpc', port=52981):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((host, port))
-        request_message = "Request task"
-        s.sendall(request_message.encode())
-        response = s.recv(1024).decode()
-        params = json.loads(response)
-        print("Received parameters from the server:")
-        print(params)
+# External imports
+from time import sleep
+import socket, os, sys, json
+
+# Start logger
+import log # local
+log.start('x.log', toscreen=True)
+log.info('Logger started')
+
+# Local imports
+from par_util import get_param_from_server, send_finished_to_server, get_paths
+paths = get_paths()
+sys.path.append(paths["src"])
+from run_task import fit_model
+
+# Client that runs tasks while they are available
+def client():
+    # Create folder for task and make it current
+
+    process = f"{socket.gethostname()}:{os.getpid()}"
+    runpath = paths["run"]
+    datapath = paths["data"]
+    
+    while True:
+        response_str = get_param_from_server(process)
+        if response_str == 'No more tasks':
+            print(f"No more tasks for process {process}")
+            break
+        else:
+            response = json.loads(response_str)
+            (folder, task_number, params) = response
+            modelpath = f"{runpath}/{folder}/results-{task_number}"
+            os.makedirs(modelpath, exist_ok=True)
+            os.chdir(modelpath)
+            log.start("output.log", toscreen=True)
+            log.info(f"Running task {task_number} on {process} with "\
+                     f"parameters:\n{params}")
+            fit_model(task_number, params,   datapath)
+            sleep(1)
+            send_finished_to_server(task_number)
 
 if __name__ == "__main__":
-    test_client()  # Call the test client function
+    client()
