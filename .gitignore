@@ -1,5 +1,6 @@
 /data/*/
 /results
+**/run*
 Icon*
 .DS_Store
 **/jón
@@ -7,3 +8,5 @@ Icon*
 **/__pycache__
 **/.ipynb_checkpoints
 *~
+*.log
+par*.csv
