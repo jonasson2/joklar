@@ -140,13 +140,13 @@ class TrainingMeasures:
         self.training_time.append(training_time)
         self.loss_curve.append(loss)
         self.val_loss_curve.append(val_loss)
-
-    def stats(self):
+        
+    def stats(self, numdec=4):
         mean_SD = {}
         for attr in vars(self):
             values = getattr(self, attr)
-            mean_SD[attr] = (np.mean(values, axis=0).tolist(),
-                             np.std(values, axis=0).tolist())
+            mean_SD[attr] = (np.round(np.mean(values, axis=0), numdec).tolist(),
+                             np.round(np.std(values, axis=0), numdec).tolist())
         return mean_SD
 
 def fit_model(task_number, params, datapath):

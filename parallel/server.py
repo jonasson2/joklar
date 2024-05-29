@@ -23,42 +23,41 @@ def run_server(param_file, folder, port=52981):
     tasks = pd.read_csv(param_file, index_col=0)
     tasks["done"] = False
     results = {}
-    task_indices = tasks.index.copy()
-    print('task_indices=', task_indices)
+    pending_indices = tasks.index.copy()
+    print('pending_indices=', pending_indices)
     (host, port) = get_server_host_and_port()
     os.makedirs(folder, exist_ok = True)
-    processes = {}
+    processes = set()
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((host, port))
         print(f"Server waiting to deliver tasks on port {port}, host {host}")
         s.listen()
         while True:
             (conn, addr) = s.accept()
-            print('addr=', addr)
             with conn:
                 request = conn.recv(1024).decode()
                 if request.startswith("Request task:"):
                     process = request.split(":", 1)[1]
-                    if task_indices.empty:
+                    if pending_indices.empty:
                         conn.sendall("No more tasks".encode())
-                        processes[process] = None
+                        processes.discard(process)
                     else:
-                        processes[process] = 1
-                        task_number = int(task_indices[0])
+                        processes.add(process)
+                        task_number = int(pending_indices[0])
                         print('task_number', task_number)
                         task = tasks.loc[task_number].to_dict()
                         params = [folder, task_number, task]
                         stri = json.dumps(params)
                         conn.sendall(json.dumps(params).encode())
-                        task_indices = task_indices.drop(task_number)
+                        pending_indices = pending_indices.drop(task_number)
                         print(f"Task {task_number} for folder {folder} delivered")
-                elif request.startswith("Task finished:"):xxxxxxxxxxxxxxxxxx
+                elif request.startswith("Task finished:"):
                     task_nr = int(request.split(":", 1)[1])
                     print(f'Task {task_nr} finished')
                     tasks.loc[task_nr, 'done'] = True
                 else:
-                    error(f"Unknown request: {request}")
-                if all(tasks.done):
+                    sys.exit(f"Unknown request: {request}")
+                if all(tasks.done) and len(processes) == 0:
                     break
         print("All tasks finished")
 
