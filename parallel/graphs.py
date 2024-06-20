@@ -1,97 +1,93 @@
 # IMPORTS
-import itertools
-import matplotlib.pyplot as plt, matplotlib.figure as mpf
-MAXWIDHEI = 2
+import itertools, numpy as np, matplotlib as mpl
+import matplotlib.pyplot as plt
+mpl.use('MacOSX')
+AVG_CHAR_WIDTH = 0.55
+#plt.ion()
+
 plt.rc('figure.constrained_layout', use = True)
+plt.rc('axes', grid = True)
 for tick in ('xtick', 'ytick'):
     plt.rc(tick, labelsize=8)
 
-def split_type(nrows, ncols):
-    if nrows/9 < ncols/16 < MAXWIDHEI:
-        return 'vertically'
-    elif ncols/16 < nrows/9 < MAXWIDHEI:
-        return 'horizontally'
-    else:
-        return 'full'
-    
-def head(measures: dict):
-    return next(iter(measures.items()))
+def dimensions(measures: dict, maxrows, maxcols):
+    # Return:
+    #   row_measures = range of measures to be spread over rows
+    #   col_measures = range of measures to be spread over columns
+    # of each (sub)figure
+    lens = [len(v) for v in measures.values()] + [100]
+    n = len(measures)
+    rows = 1
+    cols = 1
+    krow = 0
+    while rows*lens[krow] <= maxrows:
+        rows *= lens[krow]
+        krow += 1
+    kcol = krow
+    while cols*lens[kcol] <= maxcols:
+        cols *= lens[kcol]
+        kcol += 1
+    return range(krow), range(krow, kcol), kcol, range(kcol+1, n), rows, cols
 
-def tail(measures: dict):
-    return dict(itertools.islice(measures.items(), 1, None))
+def w_fontsize(text, ax, max_fontsize: int = 10) -> float:
+    # Estimate the font size based on the length of the text and the available width
+    pts_per_pix = 72/ax.figure.dpi
+    width_pts = ax.get_position().width * ax.figure.bbox.width * pts_per_pix
+    fontsize = width_pts / (len(text) * AVG_CHAR_WIDTH)
+    return min(max_fontsize, fontsize)
 
-def max_splits(measures):
-    nmeasures = len(measures)
-    nsplit = [None]*nmeasures
-    nrows = 1
-    ncols = 1
-    direction = ""
-    maxSplit = 0
-    measure_values = list(measures.values())
-    for index in range(nmeasures):
-        values = measure_values[index]
-        nsplit[index] = len(values)
-        match split_type(nrows, ncols):
-            case 'vertically':
-                nrows *= nsplit
-                direction += 'v'
-            case 'horizontally':
-                ncols *= nsplit
-                direction += 'h'
-            case 'full':
-                break
-        maxSplit += 1
-    return maxSplit, nsplit, direction
+def h_fontsize(text, ax, max_fontsize: int = 10) -> float:
+    # Estimate the font size based on the length of the text and the available height
+    pts_per_pix = 72/ax.figure.dpi
+    height_pts = ax.get_position().height * ax.figure.bbox.height * pts_per_pix
+    fontsize = height_pts / (len(text) * AVG_CHAR_WIDTH)
+    return min(max_fontsize, fontsize)
 
+def subplots(fig, m, n):
+    ax = np.atleast_2d(fig.subplots(m, n, sharex=True, sharey=True))
+    if n == 1:
+        ax = ax.T
+    return ax
 
-def create_figures(measures, data):
-    # measures is a dictionary {measure: list-of-values, ...}
-    
-    def split_graphs(fig, measures, nsplit, direction):
-        if len(nsplit) == 0:
-            return
-        name, values = head(measures)
-        match direction[0]:
-            case 'v':
-                subfigs = fig.subfigures(nsplit[0], 1)
-                for (sf, val) in zip(subfigs, values):
-                    title = f"{name}={val}"
-                    sf.suptitle(title, x=0, y=0.5, ha='right', va='center', rotation=90)
-            case 'h':
-                subfigs = fig.subfigures(1, nsplit[0])
-                for (sf, val) in zip(subfigs, values):
-                    title = f"{name}={val}"
-                    sf.suptitle(title)
-        for sf in subfigs:        
-            split_graphs(sf, tail(measures), nsplit[1:], direction[1:])
-        
-    maxSplit, nsplit, direction = max_splits(measures)
-    split_measures = dict(itertools.islice(measures.items(), maxSplit))
-    remaining_keys = list(measures.keys())[maxSplit:]
-    remaining_values = list(measures.values())[maxSplit:]
-    for vals in itertools.product(*remaining_values):
-        heading = ', '.join([f'{m}={v}' for m, v in zip(remaining_keys, vals)])
-        fig = plt.figure(figsize=(20, 10))
-        fig.suptitle(heading)
-        split_graphs(fig, split_measures, nsplit, direction)
-        print(heading)
+def plots(parameters: dict, maxrows, maxcols):
+    row_meas, col_meas, subfig_meas, fig_meas, rows, cols = dimensions(parameters, maxrows, maxcols)
+    keys = list(parameters.keys())
+    values = list(parameters.values())
+    row_keys = [keys[k] for k in row_meas]
+    col_keys = [keys[k] for k in col_meas]
+    subfig_key = keys[subfig_meas]
+    fig_keys = [keys[k] for k in fig_meas]
+    ax_dict = {}                                    
+    for fig_values in itertools.product(*(parameters[key] for key in fig_keys)):
+        fig = plt.figure(figsize=(18, 8))
+        header = ", ".join(f"{k}={c}" for k, c in zip(fig_keys, fig_values))
+        fig.suptitle(header)
+        nsubfig = len(parameters[subfig_key])
+        subfigs = fig.subfigures(1, nsubfig)
+        for subfig, subfig_value in zip(subfigs, parameters[subfig_key]):
+            subfig.suptitle(f"{subfig_key} = {subfig_value}")
+        for subfig, subfig_value in zip(subfigs, parameters[subfig_key]):
+            subfig.suptitle(f"{subfig_key} = {subfig_value}")
+            ax = subplots(subfig, rows, cols)
+            for c, col_val in enumerate(itertools.product(*(values[k] for k in col_meas))):
+                col_header = ", ".join(f"{k}={v}" for k, v in zip(col_keys, col_val))
+                fontsize = w_fontsize(col_header, ax[0,0])
+                ax[0, c].set_title(col_header, fontsize=fontsize)
+            for r, row_val in enumerate(itertools.product(*(values[k] for k in row_meas))):
+                row_header = ", ".join(f"{k}={v}" for k, v in zip(row_keys, row_val))
+                fontsize = h_fontsize(row_header, ax[r,0])
+                ax[r, 0].set_ylabel(row_header, fontsize=fontsize)
+                for c, col_val in enumerate(itertools.product(*(values[k] for k in col_meas))):
+                    val = list(row_val) + list(col_val) + [subfig_value] + list(fig_values)
+                    ax_dict[tuple(val)] = ax[r, c]
+    return ax_dict
 
 if __name__ == "__main__":
-    def create_test_measures(L):
-        d = {}
-        for (i,n) in enumerate(L):
-            d[f'measure{i}'] = list(range(n))
-        return d
-    def run_test():
-        L1 = [3, 2, 4, 5]
-        L2 = [4, 3, 2, 4, 3, 2]
-        L3 = [6, 2, 2, 4, 3, 2, 2]
-        for (L,n) in zip([L1, L2, L3], [4, 6, 6]):
-            measures = create_test_measures(L)
-            ms, dir = max_splits(measures)
-            print(f'max_splits={ms}, dir={dir}')
-            assert(ms == n)
-            #create_figures(measures)
-
-    # Test
-    run_test()
+    measures = {"A":[1,2], "B":[4,5], "long-C-title":[7,8], "long-D-title":[10,11], "E":[13, 14], "F":[16, 17], "G":[18, 19]}
+    row_meas, col_meas, subfig_meas, fig_meas, rows, cols = dimensions(measures, 10, 10)
+    print(row_meas, col_meas, subfig_meas, fig_meas, rows, cols)
+    ax_dict = plots(measures, 6, 6)
+    print(ax_dict)
+    plt.show()
+    #wait for keypress
+    input("Press Enter to continue...")

@@ -43,28 +43,26 @@ def max_splits(measures):
         maxSplit += 1
     return maxSplit, nsplit, direction
 
+def split_graphs(fig, measures, nsplit, direction):
+    if len(nsplit) == 0:
+        return
+    name, values = head(measures)
+    match direction[0]:
+        case 'v':
+            bfigs = fig.subfigures(nsplit[0], 1)
+            for (sf, val) in zip(subfigs, values):
+                title = f"{name}={val}"
+                sf.suptitle(title, x=0, y=0.5, ha='right', va='center', rotation=90)
+        case 'h':
+            subfigs = fig.subfigures(1, nsplit[0])
+            for (sf, val) in zip(subfigs, values):
+                title = f"{name}={val}"
+                sf.suptitle(title)
+    for sf in subfigs:
+        split_graphs(sf, tail(measures), nsplit[1:], direction[1:])
 
-def create_figures(measures, data):
+def create_figures(measures):
     # measures is a dictionary {measure: list-of-values, ...}
-    
-    def split_graphs(fig, measures, nsplit, direction):
-        if len(nsplit) == 0:
-            return
-        name, values = head(measures)
-        match direction[0]:
-            case 'v':
-                subfigs = fig.subfigures(nsplit[0], 1)
-                for (sf, val) in zip(subfigs, values):
-                    title = f"{name}={val}"
-                    sf.suptitle(title, x=0, y=0.5, ha='right', va='center', rotation=90)
-            case 'h':
-                subfigs = fig.subfigures(1, nsplit[0])
-                for (sf, val) in zip(subfigs, values):
-                    title = f"{name}={val}"
-                    sf.suptitle(title)
-        for sf in subfigs:        
-            split_graphs(sf, tail(measures), nsplit[1:], direction[1:])
-        
     maxSplit, nsplit, direction = max_splits(measures)
     split_measures = dict(itertools.islice(measures.items(), maxSplit))
     remaining_keys = list(measures.keys())[maxSplit:]

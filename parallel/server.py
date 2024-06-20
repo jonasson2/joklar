@@ -11,6 +11,8 @@ import socket, pandas as pd, json, sys, os, shutil
 from par_util import get_server_host_and_port
 
 def clear_results(folder):
+    if not os.path.exists(folder):
+        return
     for item in os.listdir(folder):
         if item.startswith('results-'):
             folder_item = f"{folder}/{item}"
@@ -24,7 +26,8 @@ def run_server(param_file, folder, port=52981):
     tasks["done"] = False
     results = {}
     pending_indices = tasks.index.copy()
-    print('pending_indices=', pending_indices)
+    ntask = len(tasks)
+    print('pending_indices=\n', pending_indices)
     (host, port) = get_server_host_and_port()
     os.makedirs(folder, exist_ok = True)
     processes = set()
@@ -50,13 +53,15 @@ def run_server(param_file, folder, port=52981):
                         stri = json.dumps(params)
                         conn.sendall(json.dumps(params).encode())
                         pending_indices = pending_indices.drop(task_number)
-                        print(f"Task {task_number} for folder {folder} delivered")
+                        print(f"Task {task_number}/{ntask} for folder {folder} delivered")
                 elif request.startswith("Task finished:"):
                     task_nr = int(request.split(":", 1)[1])
                     print(f'Task {task_nr} finished')
                     tasks.loc[task_nr, 'done'] = True
                 else:
                     sys.exit(f"Unknown request: {request}")
+                print('tasks.done', tasks.done)
+                print('len(processes)', len(processes))
                 if all(tasks.done) and len(processes) == 0:
                     break
         print("All tasks finished")

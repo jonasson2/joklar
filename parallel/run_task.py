@@ -21,10 +21,10 @@ import log
 
 COMPACT = True
 COMBINE_TEST_VAL = False
-NSPLIT = 3
+NSPLIT = 2
 SEED = 42
 TESTSIZE = 0.15
-EPOCHS = 10
+EPOCHS = 60
 
 def test_split(indices, seed=SEED):
     # Define data split (training, validation, and test sets)
