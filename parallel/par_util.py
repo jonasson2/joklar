@@ -1,28 +1,40 @@
 import os, socket, json, sys
 
+def is_elja_login():
+    hostname = socket.gethostname()
+    return hostname.startswith('elja')
+
+def is_elja_compute():
+    hostname = socket.gethostname()
+    return hostname.startswith('gpu')
+
 def get_paths():
-    import socket, os
     hostname = socket.gethostname()
     if hostname == 'makki':
         path = os.path.expanduser("~/drive/joklar/")
-    elif hostname.startswith('elja') or hostname == 'pluto':
+        runpath = "~/joklar/"
+    elif is_elja_login() or is_elja_compute() or hostname == 'pluto':
         path = os.path.expanduser("~/joklar/")
+        runpath = path + "parallel/"
     else:
-        s = f"hostname is {hostname}, it should be 'makki', 'pluto', or 'elja*'"
+        s = f"hostname is {hostname}, it should be 'makki', 'pluto', 'elja*', or 'gpu*'"
         raise EnvironmentError(s)
     return {
         'path': path,
-        'run': path + 'parallel',
+        'run': runpath,
         'src': path + 'src',
         'data': path + 'data/lang'
     }
 
 def get_server_host_and_port():
-    login_node = os.getenv('SLURM_SUBMIT_HOST')
     port = 52981
-    if login_node is None: # For testing, when not on compute node
-        login_node = "127.0.0.1"
-    return (login_node, port)
+    if is_elja_login():
+        ip = socket.gethostbyname(socket.gethostname())
+    elif is_elja_compute():        
+        ip = os.getenv('SLURM_SUBMIT_HOST')
+    else: # For testing, when not on Elja
+        ip = "127.0.0.1"
+    return (ip, port)
 
 def get_param_from_server(process):
     (host, port) = get_server_host_and_port()

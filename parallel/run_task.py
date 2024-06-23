@@ -19,12 +19,12 @@ from util.util import install_import
 from util.image_util import load_data, compactify
 import log
 
-COMPACT = True
+COMPACT = False
 COMBINE_TEST_VAL = False
-NSPLIT = 2
+NSPLIT = 5
 SEED = 42
 TESTSIZE = 0.15
-EPOCHS = 60
+EPOCHS = 100
 
 def test_split(indices, seed=SEED):
     # Define data split (training, validation, and test sets)
