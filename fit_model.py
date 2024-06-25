@@ -27,7 +27,6 @@ from sklearn.model_selection import train_test_split
 from tensorflow.keras.callbacks import EarlyStopping, ModelCheckpoint
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 
-sys.path.append(PATH + "src")
 from util.util import install_import
 from util.image_util import load_data, compactify
 from osgeo import gdal

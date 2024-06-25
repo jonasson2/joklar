@@ -91,7 +91,7 @@ def plot_loss(parameters, val_loss_dict):
     pass
 
 if __name__ == "__main__":
-    taskfolder = "run1"
+    taskfolder = "."
     parameters, configurations, measures = combine_results(taskfolder)
     val_loss_dict = create_val_loss_dict(parameters, configurations, measures)
     pp("Parameters:", parameters)

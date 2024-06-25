@@ -3,10 +3,12 @@
 **/run*
 Icon*
 .DS_Store
+**/run
 **/jón
 **/.idea
 **/__pycache__
 **/.ipynb_checkpoints
 *~
 *.log
+*.keras
 par*.csv

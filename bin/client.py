@@ -4,15 +4,10 @@
 from time import sleep
 import socket, os, sys, json
 
-# Start logger
-import log # local
-log.start('x.log', toscreen=True)
-log.info('Logger started')
-
 # Local imports
+import log
 from par_util import get_param_from_server, send_finished_to_server, get_paths
 paths = get_paths()
-sys.path.append(paths["src"])
 from run_task import fit_model
 
 # Client that runs tasks while they are available
@@ -34,7 +29,7 @@ def client():
             modelpath = f"{runpath}/{folder}/results-{task_number}"
             os.makedirs(modelpath, exist_ok=True)
             os.chdir(modelpath)
-            log.start("output.log", toscreen=True)
+            log.start("output.log", toscreen=True, prefix=f"Task {task_number}: ")
             log.info(f"Running task {task_number} on {process} with "\
                      f"parameters:\n{params}")
             fit_model(task_number, params,   datapath)
