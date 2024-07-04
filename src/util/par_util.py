@@ -15,7 +15,7 @@ def get_paths():
         runpath = "~/joklar/"
     elif is_elja_login() or is_elja_compute() or hostname == 'pluto':
         path = os.path.expanduser("~/joklar/")
-        runpath = path + "parallel/"
+        runpath = path
     else:
         s = f"hostname is {hostname}, it should be 'makki', 'pluto', 'elja*', or 'gpu*'"
         raise EnvironmentError(s)

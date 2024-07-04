@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# client.py can be run on a compute node, either after logging on to it with
+# srun, or via sbatch-script.sh. It receives the parameters to use and the folder
+# where the results are written from server.py, via a socket and a json file.
+
 # External imports
 from time import sleep
 import socket, os, sys, json

@@ -1,14 +1,36 @@
 #!/usr/bin/env python
-
 # Server script that doles out tasks to workers. The task list is
 # read from a csv file provided on the command line with format:
 #
-# id,param1,param2...
-# 0,val1,val2...
-# 1,val1,val2...
 
 import socket, pandas as pd, json, sys, os, shutil
 from par_util import get_server_host_and_port
+
+if len(sys.argv) < 3:
+    print("""
+Server script that distributes tasks to client.py workers
+
+USAGE
+  server.py parameters.csv output-folder
+
+DESCRIPTION
+  The server should be run either on the local computer (for testing)
+  or on the login-node of elja. The parameter file has format:
+    
+    id,param1,param2...
+    0,val1,val2...
+    1,val1,val2...
+    ...  
+
+  and it can be created using create_tasks.sh. The server distributes tasks to
+  workers (client.py scripts) running on compute nodes or (for testing) on the
+  local computer. If the task with id xx is allocated to a client the output
+  will go to the files:
+
+    ~/joklar/output-folder/results-xx/{measures.json,output.log}
+
+""")
+    sys.exit()
 
 def clear_results(folder):
     if not os.path.exists(folder):
@@ -67,11 +89,7 @@ def run_server(param_file, folder, port=52981):
         print("All tasks finished")
 
 if __name__ == "__main__":
-    if len(sys.argv) == 2 and sys.argv[1] == '-h':
-        print('Usage:')
-        print('    server.py [param-file [folder]]  (defaults parameters.csv and .)')
-    else:
-        param_file = "parameters.csv" if len(sys.argv) <= 1 else sys.argv[1]
-        folder = "." if len(sys.argv) <= 2 else sys.argv[2]
-        clear_results(folder)
-        run_server(param_file, folder)
+    param_file = sys.argv[1]
+    folder = sys.argv[2]
+    clear_results(folder)
+    run_server(param_file, folder)
