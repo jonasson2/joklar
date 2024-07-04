@@ -902,3 +902,4 @@ Task 70: 2024-06-25 00:11:12,502 - INFO - Epoch 71/100: loss=0.2289, accuracy=0.
 Task 70: 2024-06-25 00:11:16,720 - INFO - Epoch 81/100: loss=0.2364, accuracy=0.9669, val_loss=0.9027, val_accuracy=0.3877, lr=0.0000
 Task 70: 2024-06-25 00:11:20,930 - INFO - Epoch 91/100: loss=0.2311, accuracy=0.9684, val_loss=0.8525, val_accuracy=0.3931, lr=0.0000
 No more tasks for process gpu-2:1211102
+slurmstepd-gpu-2: error: *** JOB 1162535 ON gpu-2 CANCELLED AT 2024-06-26T22:57:13 DUE TO TIME LIMIT ***

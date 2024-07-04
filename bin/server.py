@@ -71,6 +71,8 @@ if __name__ == "__main__":
         print('Usage:')
         print('    server.py [param-file [folder]]  (defaults parameters.csv and .)')
     else:
+        dir = os.path.expanduser("~/joklar/parallel")
+        os.chdir(dir)
         param_file = "parameters.csv" if len(sys.argv) <= 1 else sys.argv[1]
         folder = "." if len(sys.argv) <= 2 else sys.argv[2]
         clear_results(folder)
