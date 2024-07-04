@@ -2416,3 +2416,4 @@ Task 69: 2024-06-25 00:09:25,059 - INFO - Epoch 71/100: loss=0.1878, accuracy=0.
 Task 69: 2024-06-25 00:09:31,294 - INFO - Epoch 81/100: loss=0.1905, accuracy=0.9745, val_loss=0.5501, val_accuracy=0.6325, lr=0.0000
 Task 69: 2024-06-25 00:09:34,058 - INFO - Epoch 91/100: loss=0.1848, accuracy=0.9752, val_loss=0.5402, val_accuracy=0.6533, lr=0.0000
 No more tasks for process gpu-8:787747
+slurmstepd-gpu-8: error: *** JOB 1162537 ON gpu-8 CANCELLED AT 2024-06-26T22:57:13 DUE TO TIME LIMIT ***

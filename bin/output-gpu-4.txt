@@ -1272,3 +1272,4 @@ Task 71: 2024-06-25 00:10:54,471 - INFO - Epoch 71/100: loss=0.2981, accuracy=0.
 Task 71: 2024-06-25 00:10:57,373 - INFO - Epoch 81/100: loss=0.2941, accuracy=0.9614, val_loss=0.9675, val_accuracy=0.3769, lr=0.0000
 Task 71: 2024-06-25 00:11:00,018 - INFO - Epoch 91/100: loss=0.2918, accuracy=0.9622, val_loss=0.9806, val_accuracy=0.3770, lr=0.0000
 No more tasks for process gpu-4:588675
+slurmstepd-gpu-4: error: *** JOB 1162536 ON gpu-4 CANCELLED AT 2024-06-26T22:57:13 DUE TO TIME LIMIT ***
