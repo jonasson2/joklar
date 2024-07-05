@@ -1,8 +1,11 @@
 from keras.models import Model
 from keras.layers import BatchNormalization, Activation, Dropout
-from tensorflow.keras.layers import Conv2D, Conv2DTranspose
-from tensorflow.keras.layers import MaxPooling2D
-from tensorflow.keras.layers import concatenate
+#from tensorflow.keras.layers import Conv2D, Conv2DTranspose
+#from tensorflow.keras.layers import MaxPooling2D
+#from tensorflow.keras.layers import concatenate
+from keras.layers import Conv2D, Conv2DTranspose
+from keras.layers import MaxPooling2D
+from keras.layers import concatenate
 
 
 def conv2d_block(input_tensor, n_filters, kernel_size = 3, batchnorm = True):

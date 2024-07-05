@@ -47,6 +47,8 @@ def compactify(images, fold=4):
     - A NumPy array of the compacted images or masks.
     """
     # Validate inputs
+    if fold == 1:
+        return images
     if images.ndim not in [3, 4]:
         raise ValueError("Input array must be 3D or 4D.")
     if images.shape[1]%fold != 0 or images.shape[2]%fold != 0:
